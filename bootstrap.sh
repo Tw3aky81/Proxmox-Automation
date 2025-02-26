@@ -1,7 +1,7 @@
 #!/bin/bash
 
 main () {
-    URL='https://codeload.github.com/fdcastel/Proxmox-Automation/zip/master'
+    URL='https://codeload.github.com/Tw3aky81/Proxmox-Automation/zip/master'
 
     TEMP_FOLDER=$(mktemp -d)
 
