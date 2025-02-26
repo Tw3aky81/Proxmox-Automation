@@ -11,6 +11,7 @@ DEFAULT_OSTYPE='l26'
 DEFAULT_CORES=2
 DEFAULT_MEMORY=2048
 DEFAULT_DISKSIZE='120G'
+DEFAULT_STORAGE='local-lvm'
 
 
 #
@@ -68,12 +69,14 @@ VM_BALLOON=0
 VM_INSTALL_DOCKER=0
 VM_NO_START=0
 VM_NO_GUEST=0
+VM_STORAGE=$DEFAULT_STORAGE
 
 # Parse arguments -- https://stackoverflow.com/a/14203146/33244
 POSITIONAL_ARGS=()
 while [[ "$#" -gt 0 ]]; do case $1 in
     --image) VM_IMAGE="$2"; shift; shift;;
     --name) VM_NAME="$2"; shift; shift;;
+    --storage) VM_STORAGE="$2"; shift; shift;;
     --cipassword) VM_CIPASSWORD="$2"; shift; shift;;
     --sshkey|--sshkeys) VM_SSHKEYS="$2"; shift; shift;;
 
@@ -118,19 +121,19 @@ qm create $VM_ID --name $VM_NAME \
     "$@" # pass remaining arguments -- https://stackoverflow.com/a/4824637/33244
 
 # Disk 0: EFI
-pvesm alloc local-zfs $VM_ID vm-$VM_ID-efi 1M
-qm set $VM_ID --efidisk0 local-zfs:vm-$VM_ID-efi
+pvesm alloc $VM_STORAGE $VM_ID vm-$VM_ID-efi 1M
+qm set $VM_ID --efidisk0 $VM_STORAGE:vm-$VM_ID-efi
 
 # Disk 1: Main disk
-qm importdisk $VM_ID $VM_IMAGE local-zfs
-qm set $VM_ID --scsi1 local-zfs:vm-$VM_ID-disk-0,discard=on,iothread=1,ssd=1 \
+qm importdisk $VM_ID $VM_IMAGE $VM_STORAGE
+qm set $VM_ID --scsi1 $VM_STORAGE:vm-$VM_ID-disk-0,discard=on,iothread=1,ssd=1 \
     --boot c \
     --bootdisk scsi1
 qm resize $VM_ID scsi1 $VM_DISKSIZE
 
 # Disk 2: cloud-init
 #   Do not use --ide or Debian 'genericcloud' image will not work.
-qm set $VM_ID --scsi2 local-zfs:cloudinit 
+qm set $VM_ID --scsi2 $VM_STORAGE:cloudinit 
 
 
 
